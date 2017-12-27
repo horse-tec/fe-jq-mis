@@ -5,6 +5,10 @@ import {Link, BrowserRouter as Router, Route, Switch} from 'react-router-dom'
 import CityManage from "./Pages/CityManage/CityManage";
 import ProfessionManage from "./Pages/ProfessionManage/ProfessionManage";
 import Login from "./Pages/Login/Login";
+import axios from 'axios'
+import localStorage from './util/localStorage'
+import ep from './util/ep'
+
 const {Header, Content, Footer, Sider} = Layout;
 
 class App extends Component {
@@ -53,7 +57,7 @@ class App extends Component {
                         </Footer>
                     </Layout>
                     {!this.state.isLogin ? (
-                        <Login onLoginSuccess={this.onLoginSuccess.bind(this)} onLoginFail={this.onLoginFail.bind(this)}/>
+                        <Login onLoginSuccess={this.onLoginSuccess.bind(this)} />
                     ) : null }
                     <BackTop/>
                 </Layout>
@@ -62,35 +66,75 @@ class App extends Component {
     }
 
     componentDidMount() {
-        let localStorage = window.localStorage;
-        if (localStorage) {
-            let token = localStorage.getItem("token");
-            if (token && token.length && token.length > 0) {
-                this.setState({
-                    isLogin: true
-                });
-            } else {
-                this.setState({
-                    isLogin: false
-                });
-            }
-        }
-
+        this.registerEvent();
+        this.checkUserInfo();
     }
 
-    onLoginSuccess(token) {
-        let localStorage = window.localStorage;
-        if (localStorage) {
-            localStorage.setItem("token", token);
+    checkUserInfo() {
+        let token = localStorage.getItem("token");
+        axios.defaults.baseURL = "http://localhost:5000";
+        if (token && token.length > 0) {
             this.setState({
                 isLogin: true
             });
-            message.success('Login Success');
+            axios.defaults.headers.common['Authorization'] = "Bearer " + token;
+            this.getUserInfo();
+        } else {
+            this.setState({
+                isLogin: false
+            });
         }
     }
 
-    onLoginFail() {
+    registerEvent() {
+        let self = this;
+        ep.on('login', function (data) {
+            if (data) {
+                message.error(data);
+            }
+            self.setState({
+                isLogin: false
+            });
+            localStorage.removeItem("token");
+        });
 
+        ep.on("showLoading", function(data) {
+
+        })
+    }
+
+    onLoginSuccess(token) {
+        localStorage.setItem("token", token);
+        this.setState({
+            isLogin: true
+        });
+        message.success('Login Success');
+        this.getUserInfo();
+    }
+
+    getUserInfo() {
+        let self = this;
+        axios.get("/api/getUserInfo")
+            .then(function (resp) {
+                if (resp.status === 200) {
+                    let data = resp.data;
+                    console.log(data)
+                } else {
+                    console.log(resp)
+                }
+            })
+            .catch(function (err) {
+                if (err && err.response) {
+                    let resp = err.response;
+                    message.info("login again");
+                    if (resp.status === 401) {
+                        localStorage.removeItem("token");
+                        self.setState({
+                            isLogin: false
+                        });
+                    }
+                }
+            });
     }
 
     onSelectMenu(item, key, selectedKeys) {

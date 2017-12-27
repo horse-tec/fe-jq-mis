@@ -44,7 +44,8 @@ class Login extends React.Component {
                             )}
                         </FormItem>
 
-                        <Button type="primary" htmlType="submit" className="login-form-button" loading={this.state.isLoading}>
+                        <Button type="primary" htmlType="submit" className="login-form-button"
+                                loading={this.state.isLoading}>
                             Log in
                         </Button>
                     </Form>
@@ -61,32 +62,39 @@ class Login extends React.Component {
             isLoading: true
         });
         this.props.form.validateFields((err, values) => {
+            let self = this;
             if (!err) {
                 // values.userName
                 // values.password
-                setTimeout(function() {
-                    message.error("Login Fail")
-                    this.setState({
+                axios.post("http://localhost:5000/auth/login", {
+                    UserName: values.userName,
+                    Password: values.password
+                }).then(function (res) {
+                    self.setState({
                         isLoading: false
                     });
-                }.bind(this), 1000)
-
-                axios.get("https://zhuanlan.zhihu.com/api/columns/bigertech/posts?limit=1&offset=10")
-                    .then(function(res) {
-                        console.log(res)
-                    })
-                    .catch();
-
-                console.log('Received values of form: ', values);
+                    if (res.status === 200) {
+                        let data = res.data;
+                        if (data && data.token) {
+                            self.onLoginSuccess(data.token)
+                        }
+                    }
+                    console.log(res)
+                }).catch(function (err) {
+                    self.setState({
+                        isLoading: false
+                    });
+                    message.error("Login Fail")
+                });
                 // this.onLoginSuccess()
             }
         });
     }
 
-    onLoginSuccess() {
+    onLoginSuccess(token) {
         let loginCallBack = this.props.onLoginSuccess;
         if (loginCallBack) {
-            loginCallBack("abc")
+            loginCallBack(token)
         }
     }
 

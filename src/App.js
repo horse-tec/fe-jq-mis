@@ -8,6 +8,7 @@ import Login from "./Pages/Login/Login";
 import axios from 'axios'
 import localStorage from './util/localStorage'
 import ep from './util/ep'
+import EditSchool from "./Pages/School/EditSchool";
 
 const {Header, Content, Footer, Sider} = Layout;
 
@@ -47,6 +48,7 @@ class App extends Component {
                                 <Switch>
                                     <Route exact path="/" component={CityManage}/>
                                     <Route path="/1" component={ProfessionManage}/>
+                                    <Route path="/school/edit" component={EditSchool}/>
                                 </Switch>
                             )
                                 : null
